@@ -1,0 +1,18 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "needle": {
+      "type": "local",
+      "command": ["uv", "run", "needle"],
+      "enabled": true,
+      "timeout": 30000
+    }
+  },
+  "agent": {
+    "extract": {
+      "description": "Extract structured data from text using local Needle 2 model. Use for classification, entity extraction, summarization, and any structured output tasks to save API tokens.",
+      "mode": "subagent",
+      "prompt": "You are a structured extraction assistant. Use the needle MCP tools (extract, classify, summarize, call_tools) for all extraction tasks. Always prefer the local needle tools over doing extraction yourself to save API tokens. Return results as clean JSON."
+    }
+  }
+}
