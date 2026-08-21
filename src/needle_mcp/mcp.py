@@ -8,6 +8,9 @@ import platform
 import ssl
 import sys
 import zipfile
+import re
+
+from needle_mcp.cache import get_cached_response, set_cached_response
 
 CACHE_DIR = os.path.expanduser("~/.cache/needle")
 ENGINE_VERSION = "2.0.3"
@@ -155,11 +158,50 @@ TOOLS = [
             "required": ["text"]
         }
     ),
+    Tool(
+        name="route_tools",
+        description="Rank and filter a list of tools to find the most relevant ones for a query. Use this to prune tools before sending them to the LLM system prompt.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "User intent or query text"},
+                "tools": {"type": "string", "description": "JSON array of tool definitions"},
+                "top_k": {"type": "integer", "description": "Max number of tools to return", "default": 3}
+            },
+            "required": ["text", "tools"]
+        }
+    ),
+    Tool(
+        name="filter_context",
+        description="Chunk a large text document and retrieve only the chunks relevant to a query. Use this to prune large context before sending to the LLM.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "Large input document text"},
+                "query": {"type": "string", "description": "Search query or keywords"},
+                "max_chunks": {"type": "integer", "description": "Max number of chunks to return", "default": 3},
+                "chunk_size": {"type": "integer", "description": "Character size of each chunk", "default": 500}
+            },
+            "required": ["text", "query"]
+        }
+    ),
 ]
 
 
 async def handle_list_tools(ctx, params):
     return ListToolsResult(tools=TOOLS)
+
+
+def _safe_json_loads(s: str):
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError:
+        try:
+            import json_repair
+            repaired = json_repair.repair_json(s)
+            return json.loads(repaired)
+        except Exception:
+            raise
 
 
 def _schema_to_function(name, schema):
@@ -192,13 +234,20 @@ async def handle_call_tool(ctx, params):
     name = params.name
     args = params.arguments
 
+    # Cache Lookup
+    cache_key = {"tool": name, "arguments": args}
+    cached_val = get_cached_response(cache_key)
+    if cached_val is not None:
+        logger.info(f"Cache hit for tool {name}")
+        return CallToolResult(content=[TextContent(type="text", text=cached_val)])
+
     try:
         if name == "extract":
             if "text" not in args or "schema" not in args:
                 return CallToolResult(content=[TextContent(type="text", text="Missing required parameters: text and schema")], isError=True)
             try:
-                schema = json.loads(args["schema"])
-            except json.JSONDecodeError as e:
+                schema = _safe_json_loads(args["schema"])
+            except Exception as e:
                 return CallToolResult(content=[TextContent(type="text", text=f"Invalid JSON schema: {e}")], isError=True)
 
             fn = _schema_to_function(schema.get("name", "extract"), schema)
@@ -214,14 +263,18 @@ async def handle_call_tool(ctx, params):
             response = agent.complete(args["text"])
             calls = response.get("function_calls") or []
             result = calls[0]["arguments"] if calls else None
-            return CallToolResult(content=[TextContent(type="text", text=json.dumps(result, indent=2))])
+            result_str = json.dumps(result, indent=2)
+            
+            # Save cache
+            set_cached_response(cache_key, result_str)
+            return CallToolResult(content=[TextContent(type="text", text=result_str)])
 
         elif name == "classify":
             if "text" not in args or "categories" not in args:
                 return CallToolResult(content=[TextContent(type="text", text="Missing required parameters: text and categories")], isError=True)
             try:
-                cats = json.loads(args["categories"])
-            except json.JSONDecodeError as e:
+                cats = _safe_json_loads(args["categories"])
+            except Exception as e:
                 return CallToolResult(content=[TextContent(type="text", text=f"Invalid categories JSON: {e}")], isError=True)
 
             def classify_fn(category: str, confidence: float):
@@ -252,7 +305,11 @@ async def handle_call_tool(ctx, params):
             response = agent.complete(args["text"])
             calls = response.get("function_calls") or []
             result = calls[0]["arguments"] if calls else None
-            return CallToolResult(content=[TextContent(type="text", text=json.dumps(result, indent=2))])
+            result_str = json.dumps(result, indent=2)
+            
+            # Save cache
+            set_cached_response(cache_key, result_str)
+            return CallToolResult(content=[TextContent(type="text", text=result_str)])
 
         elif name == "summarize":
             if "text" not in args:
@@ -284,14 +341,18 @@ async def handle_call_tool(ctx, params):
             response = agent.complete(f"Summarize in {max_s} sentences or fewer:\n\n{args['text']}")
             calls = response.get("function_calls") or []
             result = calls[0]["arguments"] if calls else None
-            return CallToolResult(content=[TextContent(type="text", text=json.dumps(result, indent=2))])
+            result_str = json.dumps(result, indent=2)
+            
+            # Save cache
+            set_cached_response(cache_key, result_str)
+            return CallToolResult(content=[TextContent(type="text", text=result_str)])
 
         elif name == "call_tools":
             if "text" not in args or "tools" not in args:
                 return CallToolResult(content=[TextContent(type="text", text="Missing required parameters: text and tools")], isError=True)
             try:
-                tool_list = json.loads(args["tools"])
-            except json.JSONDecodeError as e:
+                tool_list = _safe_json_loads(args["tools"])
+            except Exception as e:
                 return CallToolResult(content=[TextContent(type="text", text=f"Invalid tools JSON: {e}")], isError=True)
 
             def make_tool(t):
@@ -319,7 +380,106 @@ async def handle_call_tool(ctx, params):
             )
             response = agent.complete(args["text"])
             calls = response.get("function_calls") or []
-            return CallToolResult(content=[TextContent(type="text", text=json.dumps(calls, indent=2))])
+            result_str = json.dumps(calls, indent=2)
+            
+            # Save cache
+            set_cached_response(cache_key, result_str)
+            return CallToolResult(content=[TextContent(type="text", text=result_str)])
+
+        elif name == "route_tools":
+            if "text" not in args or "tools" not in args:
+                return CallToolResult(content=[TextContent(type="text", text="Missing required parameters: text and tools")], isError=True)
+            try:
+                tool_list = _safe_json_loads(args["tools"])
+            except Exception as e:
+                return CallToolResult(content=[TextContent(type="text", text=f"Invalid tools JSON: {e}")], isError=True)
+
+            top_k = args.get("top_k", 3)
+            
+            # Simple, fast keyword matching
+            def tokenize(t):
+                return set(re.findall(r'\w+', t.lower()))
+                
+            query_tokens = tokenize(args["text"])
+            if not query_tokens:
+                result_str = json.dumps(tool_list[:top_k], indent=2)
+                set_cached_response(cache_key, result_str)
+                return CallToolResult(content=[TextContent(type="text", text=result_str)])
+                
+            scored_tools = []
+            for t in tool_list:
+                t_name = t.get("name", "")
+                t_desc = t.get("description", "")
+                content = f"{t_name} {t_desc}"
+                props = t.get("parameters", {}).get("properties", {})
+                for pk, pv in props.items():
+                    content += f" {pk} {pv.get('description', '')} {pv.get('type', '')}"
+                    
+                tool_tokens = tokenize(content)
+                intersection = query_tokens.intersection(tool_tokens)
+                score = len(intersection) / len(query_tokens) if query_tokens else 0.0
+                
+                name_tokens = tokenize(t_name)
+                if query_tokens.intersection(name_tokens):
+                    score += 0.5
+                    
+                scored_tools.append((score, t))
+                
+            scored_tools.sort(key=lambda x: x[0], reverse=True)
+            routed = [st[1] for st in scored_tools[:top_k]]
+            result_str = json.dumps(routed, indent=2)
+            
+            # Save cache
+            set_cached_response(cache_key, result_str)
+            return CallToolResult(content=[TextContent(type="text", text=result_str)])
+
+        elif name == "filter_context":
+            if "text" not in args or "query" not in args:
+                return CallToolResult(content=[TextContent(type="text", text="Missing required parameters: text and query")], isError=True)
+                
+            query = args["query"]
+            text_val = args["text"]
+            max_chunks = args.get("max_chunks", 3)
+            chunk_size = args.get("chunk_size", 500)
+            
+            # Split document into chunks with overlap
+            overlap = 100
+            chunks = []
+            start = 0
+            while start < len(text_val):
+                end = min(start + chunk_size, len(text_val))
+                chunks.append(text_val[start:end])
+                if end == len(text_val):
+                    break
+                start += chunk_size - overlap
+                
+            def tokenize(t):
+                return set(re.findall(r'\w+', t.lower()))
+                
+            query_tokens = tokenize(query)
+            if not query_tokens:
+                result_str = json.dumps(chunks[:max_chunks], indent=2)
+                set_cached_response(cache_key, result_str)
+                return CallToolResult(content=[TextContent(type="text", text=result_str)])
+                
+            scored_chunks = []
+            for c in chunks:
+                chunk_tokens = tokenize(c)
+                intersection = query_tokens.intersection(chunk_tokens)
+                score = len(intersection)
+                scored_chunks.append((score, c))
+                
+            scored_chunks.sort(key=lambda x: x[0], reverse=True)
+            has_any_match = any(sc[0] > 0 for sc in scored_chunks)
+            if has_any_match:
+                scored_chunks = [sc for sc in scored_chunks if sc[0] > 0]
+                
+            filtered = [sc[1] for sc in scored_chunks[:max_chunks]]
+            result_str = json.dumps(filtered, indent=2)
+            
+            # Save cache
+            set_cached_response(cache_key, result_str)
+            return CallToolResult(content=[TextContent(type="text", text=result_str)])
 
         return CallToolResult(content=[TextContent(type="text", text=f"Unknown tool: {name}")], isError=True)
 
