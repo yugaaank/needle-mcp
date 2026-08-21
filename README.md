@@ -4,7 +4,13 @@ Production-ready MCP server for local structured extraction, classification, and
 
 [CI](https://github.com/yugaaank/needle-mcp/actions/workflows/ci.yml) [License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
-Needle MCP lets software work with structured data on your machine. It uses the Cactus Needle model, so you keep data local and get faster responses.
+- Needle MCP lets software work with structured data on your machine. It uses the [Cactus Needle](https://github.com/cactus-compute/needle) model, so you keep data local and get faster responses.
+
+## About
+
+[Cactus Compute](https://cactuscompute.com) Needle is a tiny, edge-first foundation model built for tool calling and structured extraction, not chat or facts. Needle 2 is a 45M-parameter model shipped as a 14MB binary that runs in about 28MB of RAM. Its architecture favors cross-attention over memorization-heavy feed-forward layers, which is what makes it practical for on-device agents.
+
+The model lives at [github.com/cactus-compute/needle](https://github.com/cactus-compute/needle) and the wheels are published on [Hugging Face](https://huggingface.co/Cactus-Compute/needle2). This MCP server downloads the appropriate engine for your platform on first run and caches it under `~/.cache/needle`, then exposes it through six read-only tools.
 
 ---
 
