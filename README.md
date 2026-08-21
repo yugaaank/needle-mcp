@@ -52,9 +52,19 @@ cursor mcp add needle -- needle
 
 ### Claude Desktop
 
-```bash
-claude mcp add needle -- /path/to/needle
+Edit `claude_desktop_config.json` (macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`, Windows: `%APPDATA%\Claude\claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "needle": {
+      "command": "needle"
+    }
+  }
+}
 ```
+
+Restart Claude Desktop for the change to take effect.
 
 
 ### Antigravity CLI
