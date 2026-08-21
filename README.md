@@ -42,13 +42,13 @@ uv tool install git+https://github.com/yugaaank/needle-mcp
 ### Claude Code
 
 ```bash
-claude mcp add needle -- needle
+claude mcp add needle -- needle-mcp
 ```
 
 ### Cursor
 
 ```bash
-cursor mcp add needle -- needle
+cursor mcp add needle -- needle-mcp
 ```
 
 ### Claude Desktop
@@ -59,7 +59,7 @@ Edit `claude_desktop_config.json` (macOS: `~/Library/Application Support/Claude/
 {
   "mcpServers": {
     "needle": {
-      "command": "needle"
+      "command": "needle-mcp"
     }
   }
 }
@@ -67,11 +67,10 @@ Edit `claude_desktop_config.json` (macOS: `~/Library/Application Support/Claude/
 
 Restart Claude Desktop for the change to take effect.
 
-
 ### Antigravity CLI
 
 ```bash
-agy mcp add needle -- needle
+agy mcp add needle -- needle-mcp
 ```
 
 ### OpenCode
@@ -83,7 +82,7 @@ Add the server to your `opencode.json` under the `mcp` key:
   "mcp": {
     "needle": {
       "type": "local",
-      "command": ["needle"],
+      "command": ["needle-mcp"],
       "enabled": true,
       "timeout": 30000
     }
@@ -103,7 +102,7 @@ Add the server to an OMP-native MCP config file:
   "$schema": "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json",
   "mcpServers": {
     "needle": {
-      "command": "needle"
+      "command": "needle-mcp"
     }
   }
 }
@@ -119,9 +118,8 @@ Or use the interactive wizard in a running OMP session, then reload:
 ### CLI
 
 ```bash
-needle
+needle-mcp
 ```
-
 
 ## Tools
 

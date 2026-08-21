@@ -5,10 +5,12 @@ import json
 import logging
 import os
 import platform
+import re
 import ssl
 import sys
 import zipfile
-import re
+
+from json_repair import loads as json_repair_loads, repair_json as json_repair_repair
 
 from needle_mcp.cache import get_cached_response, set_cached_response
 
@@ -93,24 +95,60 @@ def _ensure_engine():
 
     logger.info(f"Extracting {lib_name} from wheel...")
     os.makedirs(CACHE_DIR, exist_ok=True)
-    with zipfile.ZipFile(wheel) as zf:
-        with open(lib, "wb") as f:
-            f.write(zf.read(f"needle/{lib_name}"))
+    with zipfile.ZipFile(wheel) as zf, open(lib, "wb") as f:
+        f.write(zf.read(f"needle/{lib_name}"))
     logger.info("Extraction completed.")
     return lib
 
 
 lib = _ensure_engine()
 import needle.agent.fetch as _fetch
+
 _fetch.fetch_library = lambda *a, **k: lib
 
-import needle
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import Tool, TextContent, ListToolsResult, CallToolResult
+from mcp.types import CallToolResult, ListToolsResult, TextContent, Tool
 
-async def handle_list_tools(ctx: object, params: object) -> ListToolsResult:
-    return ListToolsResult(tools=TOOLS)
+import needle
+
+
+def _safe_json_loads(s: str):
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError:
+        try:
+            repaired = json_repair_repair(s)
+            return json.loads(repaired)
+        except (json.JSONDecodeError, TypeError, ValueError) as e:
+            raise ValueError(f"Invalid JSON: {e}") from e
+
+
+def _schema_to_function(name, schema):
+    """Convert a JSON schema to a callable function for needle."""
+    core = schema.get("schema", schema) if isinstance(schema, dict) else schema
+    props = core.get("properties", {})
+    doc = core.get("description", f"Extract {name}")
+
+    annotations = {}
+    for k, v in props.items():
+        t = v.get("type", "string")
+        python_type = {"string": str, "number": float, "integer": int, "boolean": bool}.get(t, str)
+        annotations[k] = python_type
+
+    def fn(**kwargs):
+        return kwargs
+
+    fn.__name__ = name
+    fn.__doc__ = doc
+    fn.__annotations__ = annotations
+    fn._needle_tool = {
+        "name": name,
+        "description": doc,
+        "parameters": schema,
+    }
+    return fn
+
 
 TOOLS = [
     Tool(
@@ -447,7 +485,7 @@ async def handle_call_tool(ctx: object, params: object) -> CallToolResult:
 
     except Exception as e:
         logger.error(f"Error handling tool call {name}: {e}", exc_info=True)
-        return CallToolResult(content=[TextContent(type="text", text=f"Error executing tool {name}: {str(e)}")], isError=True)
+        return CallToolResult(content=[TextContent(type="text", text=f"Error executing tool {name}: {e!s}")], isError=True)
 
 
 
