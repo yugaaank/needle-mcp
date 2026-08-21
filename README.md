@@ -42,6 +42,68 @@ cursor mcp add needle -- needle
 claude mcp add needle -- /path/to/needle
 ```
 
+### Pi
+
+Add the server to Pi's MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "needle": {
+      "command": "needle"
+    }
+  }
+}
+```
+
+### Antigravity CLI
+
+```bash
+agy mcp add needle -- needle
+```
+
+### OpenCode
+
+Add the server to your `opencode.json` under the `mcp` key:
+
+```json
+{
+  "mcp": {
+    "needle": {
+      "type": "local",
+      "command": ["needle"],
+      "enabled": true,
+      "timeout": 30000
+    }
+  }
+}
+```
+
+### Oh My Pi (OMP)
+
+Add the server to an OMP-native MCP config file:
+
+- Project-scoped: `.omp/mcp.json`
+- User-wide: `~/.omp/agent/mcp.json`
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json",
+  "mcpServers": {
+    "needle": {
+      "command": "needle"
+    }
+  }
+}
+```
+
+Or use the interactive wizard in a running OMP session, then reload:
+
+```bash
+/mcp add
+/mcp reload
+```
+
 ### CLI
 
 ```bash
