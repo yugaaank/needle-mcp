@@ -10,7 +10,7 @@ import ssl
 import sys
 import zipfile
 
-from json_repair import loads as json_repair_loads, repair_json as json_repair_repair
+from json_repair import repair_json as json_repair_repair
 
 from needle_mcp.cache import get_cached_response, set_cached_response
 
