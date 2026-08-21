@@ -49,13 +49,13 @@ This installs the `needle` command into your PATH.
 To add the server to your Claude Code environment, run:
 
 ```bash
-claude mcp add needle uv --project /path/to/cloned/needle run needle
+claude mcp add needle -- uv --project /path/to/cloned/needle-mcp run needle
 ```
 
 Or, if you installed the package globally as a tool:
 
 ```bash
-claude mcp add needle needle
+claude mcp add needle -- needle
 ```
 
 ### Claude Desktop
@@ -73,7 +73,7 @@ Add the following to the `mcpServers` block:
   "mcpServers": {
     "needle": {
       "command": "uv",
-      "args": ["--project", "/path/to/cloned/needle", "run", "needle"]
+      "args": ["--project", "/path/to/cloned/needle-mcp", "run", "needle"]
     }
   }
 }
@@ -105,7 +105,7 @@ Add the configuration block to your agent's config file (usually `~/.config/ohmy
   "mcpServers": {
     "needle": {
       "command": "uv",
-      "args": ["--project", "/path/to/cloned/needle", "run", "needle"]
+      "args": ["--project", "/path/to/cloned/needle-mcp", "run", "needle"]
     }
   }
 }
