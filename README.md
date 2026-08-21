@@ -1,33 +1,28 @@
-<div align="center">
+# Needle MCP Server
 
-# 🪡 Needle MCP Server
+Production-ready MCP server for local structured extraction, classification, and summarization.
 
-**Production-ready MCP server for local structured extraction, classification, and summarization.**
+[CI](https://github.com/yugaaank/needle-mcp/actions/workflows/ci.yml) [License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
-![CI](https://github.com/yugaaank/needle-mcp/actions/workflows/ci.yml/badge.svg)
-![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-
-</div>
-
-Needle MCP allows AI agents (Claude Code, etc.) to perform structured data tasks locally using [Cactus Needle](https://huggingface.co/Cactus-Compute/needle2), saving tokens and improving performance.
+Needle MCP lets software work with structured data on your machine. It uses the Cactus Needle model, so you keep data local and get faster responses.
 
 ---
 
-## 🚀 Features
+## Features
 
-* **Zero-shot Extraction**: Extract structured data from any text using arbitrary JSON schemas.
-* **Token Pruning**: Dynamically rank and filter tools to minimize context window bloat.
-* **Smart Filtering**: Chunk and search large documents locally before passing to LLMs.
-* **Reliable Output**: Integrated JSON repair ensures valid parsing even when LLMs fail.
-* **Performance**: SQLite-backed caching for instant re-execution of identical requests.
+- Extract JSON-structured data from any text without writing a prompt.
+- Automatically drops unnecessary context to stay inside the model context window.
+- Chunk and search large documents locally before sending them to a large language model.
+- A JSON repair step guarantees parsable results.
+- SQLite cache returns identical requests instantly.
 
-## 📥 Installation
+## Installation
 
 ```bash
 uv tool install git+https://github.com/yugaaank/needle-mcp
 ```
 
-## 🛠 Usage
+## Usage
 
 ### Claude Code
 
@@ -35,12 +30,24 @@ uv tool install git+https://github.com/yugaaank/needle-mcp
 claude mcp add needle -- needle
 ```
 
+### Cursor
+
+```bash
+cursor mcp add needle -- needle
+```
+
+### Claude Desktop
+
+```bash
+claude mcp add needle -- /path/to/needle
+```
+
 ### CLI
 
 ```bash
-# Run the server
 needle
 ```
 
-## 📝 License
-Distributed under the MIT License. See `LICENSE` for more information.
+## License
+
+MIT – see the `LICENSE` file for details.
