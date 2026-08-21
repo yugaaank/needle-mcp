@@ -42,19 +42,6 @@ cursor mcp add needle -- needle
 claude mcp add needle -- /path/to/needle
 ```
 
-### Pi
-
-Add the server to Pi's MCP configuration:
-
-```json
-{
-  "mcpServers": {
-    "needle": {
-      "command": "needle"
-    }
-  }
-}
-```
 
 ### Antigravity CLI
 
