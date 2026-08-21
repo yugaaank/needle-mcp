@@ -1,10 +1,11 @@
 # Needle MCP Server
 
-Production-ready MCP server for local structured extraction, classification, and summarization.
+![CI](https://github.com/yugaaank/needle-mcp/actions/workflows/ci.yml/badge.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![Stars](https://img.shields.io/github/stars/yugaaank/needle-mcp?style=social)
+![Made with Love](https://img.shields.io/badge/Made%20with%20%E2%9D%A4%EF%B8%8F-FA7676)
 
-[CI](https://github.com/yugaaank/needle-mcp/actions/workflows/ci.yml) [License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-
-- Needle MCP lets software work with structured data on your machine. It uses the [Cactus Needle](https://github.com/cactus-compute/needle) model, so you keep data local and get faster responses.
+A production-ready [Model Context Protocol](https://modelcontextprotocol.io) server that runs the [Cactus Compute Needle](https://github.com/cactus-compute/needle) model locally for structured extraction, classification, summarization, and context pruning. Keeps your data on device.
 
 ## About
 
