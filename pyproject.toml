@@ -1,7 +1,9 @@
 [project]
-name = "needle_mcp"
+name = "needle-mcp"
 version = "0.1.0"
-description = "Add your description here"
+description = "Production-ready MCP server for local structured extraction, classification, and summarization using Cactus Needle."
+authors = [{name = "yugaaank", email = "yugaaank@users.noreply.github.com"}]
+license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -9,6 +11,10 @@ dependencies = [
     "mcp>=2.0.0",
     "json-repair",
 ]
+
+[project.urls]
+Homepage = "https://github.com/yugaaank/needle-mcp"
+Repository = "https://github.com/yugaaank/needle-mcp"
 
 [project.scripts]
 needle = "needle_mcp.mcp:main"
