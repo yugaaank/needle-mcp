@@ -31,7 +31,7 @@ uv run needle
 
 To run it directly from a GitHub repository without cloning:
 ```bash
-uvx --from git+https://github.com/<username>/<repo-name> needle
+uvx --from git+https://github.com/yugaaank/needle-mcp needle
 ```
 
 ### Installing globally
